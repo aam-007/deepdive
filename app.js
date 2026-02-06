@@ -49,9 +49,12 @@ async function loadLinks(title) {
 function isUsefulLink(link) {
   const t = link.title;
 
-  // kill obvious noise
+  // Kill Wikipedia namespaces (meta pages)
+  if (t.includes(":")) return false;
+
+  // Kill obvious noise
   if (t.match(/^\d+$/)) return false;
-  if (t.includes("List of")) return false;
+  if (t.startsWith("List of")) return false;
   if (t.includes("(disambiguation)")) return false;
   if (t.length < 5) return false;
 
@@ -70,7 +73,6 @@ function renderPaths(links) {
 
     div.innerHTML = `
       <h3>${link.title}</h3>
-      <p>Explore how this connects to the current topic.</p>
     `;
 
     div.onclick = () => loadArticle(link.title);
