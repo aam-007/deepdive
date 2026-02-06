@@ -9,3 +9,18 @@ main {
   margin: 4rem auto;
   line-height: 1.6;
 }
+
+#paths {
+  margin-top: 3rem;
+}
+
+.path {
+  padding: 1rem;
+  margin-bottom: 1rem;
+  border-left: 3px solid #ccc;
+  cursor: pointer;
+}
+
+.path:hover {
+  border-left-color: #000;
+}
