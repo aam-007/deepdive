@@ -6,7 +6,7 @@ A minimalist, algorithmic wrapper around Wikipedia designed for slow, intentiona
 
 ## What it is
 
-Deepdive turns casual searches into structured intellectual deep-dives. It's a wide-screen, distraction-free interface for reading Wikipedia—a tool for following ideas, not feeds. An experiment in silence, typography, and curiosity.
+Deepdive turns casual searches into structured intellectual deep-dives. It's a wide-screen, distraction-free interface for reading Wikipedia, a tool for following ideas, not feeds. An experiment in silence, typography, and curiosity.
 
 You search for a topic. You read. You follow connections deeper.
 
