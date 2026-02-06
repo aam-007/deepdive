@@ -43,6 +43,5 @@ Navigate to the site, search for a topic, and begin reading. Follow links to exp
 
 
 
-## License
 
-This project is open source. Please check the repository for license details.
+
