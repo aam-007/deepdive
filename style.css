@@ -10,6 +10,21 @@ main {
   line-height: 1.6;
 }
 
+#history {
+  font-size: 0.9rem;
+  color: #666;
+  margin-bottom: 2rem;
+}
+
+#history span {
+  cursor: pointer;
+}
+
+#history span:hover {
+  text-decoration: underline;
+  color: #000;
+}
+
 #paths {
   margin-top: 3rem;
 }

@@ -1,4 +1,12 @@
-async function loadArticle(title) {
+let historyTrail = [];
+
+async function loadArticle(title, fromHistory = false) {
+  if (!fromHistory) {
+    historyTrail.push(title);
+  }
+
+  renderHistory();
+
   const url = `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(title)}`;
   const res = await fetch(url);
   const data = await res.json();
@@ -62,4 +70,25 @@ function renderPaths(links) {
   });
 }
 
-loadArticle("Battle_of_Stalingrad");
+function renderHistory() {
+  const nav = document.getElementById("history");
+  nav.innerHTML = "";
+
+  historyTrail.forEach((title, index) => {
+    const span = document.createElement("span");
+    span.textContent = title.replace(/_/g, " ");
+
+    span.onclick = () => {
+      historyTrail = historyTrail.slice(0, index + 1);
+      loadArticle(title, true);
+    };
+
+    nav.appendChild(span);
+
+    if (index < historyTrail.length - 1) {
+      nav.append(" → ");
+    }
+  });
+}
+
+loadArticle("Battle_of_Stalingrad");    
