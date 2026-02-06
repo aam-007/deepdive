@@ -14,7 +14,6 @@ async function loadArticle(title, fromHistory = false) {
   rightRailLinks.innerHTML = "<p>Finding paths...</p>";
   
   if (!fromHistory) {
-    // Only push if it's not the same as the last item (prevents double entries)
     if (historyTrail[historyTrail.length - 1] !== cleanTitle) {
       historyTrail.push(cleanTitle);
     }
@@ -106,9 +105,7 @@ function renderPaths(pages) {
   });
 }
 
-/**
- * FIXED: Link Interception happens here
- */
+
 function postProcessArticle(container) {
   // 1. Remove unwanted Wikipedia elements
   const unwanted = [

@@ -6,7 +6,7 @@ A minimalist, algorithmic wrapper around Wikipedia designed for slow, intentiona
 
 ## What it is
 
-Deepdive turns casual searches into structured intellectual deep-dives. It's a wide-screen, distraction-free interface for reading Wikipedia—a tool for following ideas, not feeds. An experiment in silence, typography, and curiosity.
+Deepdive turns casual searches into structured intellectual deep-dives. It's a wide-screen, distraction-free interface for reading Wikipedia, a tool for following ideas, not feeds. An experiment in silence, typography, and curiosity.
 
 You search for a topic. You read. You follow connections deeper.
 
@@ -21,14 +21,12 @@ No accounts. No algorithms chasing engagement. No noise.
 - Designed to encourage depth over breadth
 
 ## Philosophy
-
-Most interfaces optimize for speed, skimming, and novelty. Deepdive optimizes for:
-
-- Focus
-- Continuity of thought
-- Intellectual patience
-
-This is closer to a library desk than a social app.
+Most interfaces are built for speed, skimming, and novelty.
+Deepdive is built for:
+• 	Sustained focus
+• 	Unbroken continuity of thought
+• 	The discipline of intellectual patience
+It feels less like a social feed and more like a study desk in a library.
 
 ## Tech Stack
 
