@@ -2,80 +2,96 @@ let historyTrail = [];
 
 async function loadArticle(title, fromHistory = false) {
   const fullArticleContainer = document.getElementById("full-article");
+  const rightRailLinks = document.getElementById("path-list");
   
-  // UI Reset: Ensure the article container is visible and show loading state
-  fullArticleContainer.removeAttribute("hidden");
-  fullArticleContainer.innerHTML = "<p>Loading full article...</p>";
-  
-  document.getElementById("paths").style.display = "block";
-  document.getElementById("paths").style.opacity = "1";
+  // Clean title for API calls (replace underscores with spaces)
+  const cleanTitle = title.replace(/_/g, " ");
 
+  fullArticleContainer.removeAttribute("hidden");
+  fullArticleContainer.innerHTML = "<p class='loading'>Loading article...</p>";
+  rightRailLinks.innerHTML = "<p>Finding paths...</p>";
+  
   if (!fromHistory) {
-    historyTrail.push(title);
+    historyTrail.push(cleanTitle);
   }
 
   renderHistory();
 
-  // 1. Fetch and render summary
-  const summaryUrl = `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(title)}`;
-  const res = await fetch(summaryUrl);
-  const data = await res.json();
+  try {
+    // 1. Summary
+    const summaryUrl = `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(title)}`;
+    const res = await fetch(summaryUrl);
+    const data = await res.json();
 
-  document.getElementById("title").textContent = data.title;
-  document.getElementById("summary").textContent = data.extract;
+    document.getElementById("title").textContent = data.title;
+    document.getElementById("summary").textContent = data.extract;
 
-  // 2. Fetch and render navigation links
-  const links = await loadLinks(title);
-  renderPaths(links);
+    // 2. High-Relevance Related Pages with Fallback
+    let relatedLinks = await fetchRelatedPages(title);
+    
+    // Fallback: If Related API fails or is empty, use Search API
+    if (!relatedLinks || relatedLinks.length === 0) {
+      relatedLinks = await fetchSearchFallback(cleanTitle);
+    }
+    
+    renderPaths(relatedLinks);
 
-  // 3. Automatically load the full article body
- 
-  await loadFullArticle(data.title.replace(/ /g, "_"));
+    // 3. Full Article
+    await loadFullArticle(data.title.replace(/ /g, "_"));
+  } catch (error) {
+    console.error("Failed to load article:", error);
+    fullArticleContainer.innerHTML = "<p>Error loading content.</p>";
+  }
 }
 
-async function loadLinks(title) {
-  const url =
-    `https://en.wikipedia.org/w/api.php` +
-    `?action=query` +
-    `&prop=links` +
-    `&titles=${encodeURIComponent(title)}` +
-    `&pllimit=20` +
-    `&format=json` +
-    `&origin=*`;
-
-  const res = await fetch(url);
-  const data = await res.json();
-
-  const pages = data.query.pages;
-  const page = pages[Object.keys(pages)[0]];
-
-  return page.links || [];
+// Method A: Related API (Best for context)
+async function fetchRelatedPages(title) {
+  const url = `https://en.wikipedia.org/api/rest_v1/page/related/${encodeURIComponent(title)}`;
+  try {
+    const res = await fetch(url);
+    if (!res.ok) return [];
+    const data = await res.json();
+    return data.pages ? data.pages.slice(0, 5) : [];
+  } catch (e) {
+    return [];
+  }
 }
 
-function isUsefulLink(link) {
-  const t = link.title;
-
-  // Filter out meta-pages and noise
-  if (t.includes(":")) return false;
-  if (t.match(/^\d+$/)) return false;
-  if (t.startsWith("List of")) return false;
-  if (t.includes("(disambiguation)")) return false;
-  if (t.length < 5) return false;
-
-  return true;
+// Method B: Search Fallback (Best if page is obscure)
+async function fetchSearchFallback(query) {
+  const url = `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(query)}&format=json&origin=*`;
+  try {
+    const res = await fetch(url);
+    const data = await res.json();
+    // Transform search results to match the 'related' object structure
+    return data.query.search.slice(1, 6).map(item => ({
+      title: item.title,
+      displaytitle: item.title,
+      description: "Related search result"
+    }));
+  } catch (e) {
+    return [];
+  }
 }
 
-function renderPaths(links) {
+function renderPaths(pages) {
   const container = document.getElementById("path-list");
   container.innerHTML = "";
 
-  const useful = links.filter(isUsefulLink).slice(0, 5);
+  if (!pages || pages.length === 0) {
+    container.innerHTML = "<p>No paths found. Try a different topic.</p>";
+    return;
+  }
 
-  useful.forEach(link => {
+  pages.forEach(page => {
     const div = document.createElement("div");
     div.className = "path";
-    div.innerHTML = `<h3>${link.title}</h3>`;
-    div.onclick = () => loadArticle(link.title);
+    div.innerHTML = `
+      <h3>${page.displaytitle || page.title}</h3>
+      <p>${page.description || 'Continue your dive...'}</p>
+    `;
+
+    div.onclick = () => loadArticle(page.title);
     container.appendChild(div);
   });
 }
@@ -83,21 +99,15 @@ function renderPaths(links) {
 function renderHistory() {
   const nav = document.getElementById("history");
   nav.innerHTML = "";
-
   historyTrail.forEach((title, index) => {
     const span = document.createElement("span");
-    span.textContent = title.replace(/_/g, " ");
-
+    span.textContent = title;
     span.onclick = () => {
       historyTrail = historyTrail.slice(0, index + 1);
       loadArticle(title, true);
     };
-
     nav.appendChild(span);
-
-    if (index < historyTrail.length - 1) {
-      nav.append(" ↓ ");
-    }
+    if (index < historyTrail.length - 1) nav.append(" ↓ ");
   });
 }
 
@@ -105,35 +115,21 @@ async function loadFullArticle(title) {
   const url = `https://en.wikipedia.org/api/rest_v1/page/html/${encodeURIComponent(title)}`;
   const res = await fetch(url);
   const html = await res.text();
-
   const container = document.getElementById("full-article");
   container.innerHTML = html;
-
   postProcessArticle(container);
 }
 
 function postProcessArticle(container) {
-  // Remove Wikipedia-specific UI elements that clutter the view
-  container.querySelectorAll(
-    ".mw-editsection, .mw-editsection-like, .reference, sup, .infobox, .ambox"
-  ).forEach(el => el.remove());
-
-  // Clean up images
+  container.querySelectorAll(".mw-editsection, .mw-editsection-like, .reference, sup, .infobox, .ambox, .navbox").forEach(el => el.remove());
   container.querySelectorAll("img").forEach(img => {
     img.style.maxWidth = "100%";
     img.style.height = "auto";
     img.style.margin = "2rem 0";
     img.style.display = "block";
   });
-
-  // Clean up typography
-  container.querySelectorAll("p").forEach(p => {
-    p.style.lineHeight = "1.75";
-    p.style.margin = "1.5rem 0";
-  });
 }
 
-// Global initialization
 const params = new URLSearchParams(window.location.search);
-const initialArticle = params.get("article") || "Battle_of_Stalingrad";
+const initialArticle = params.get("article") || "India";
 loadArticle(initialArticle);
