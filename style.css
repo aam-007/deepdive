@@ -5,10 +5,27 @@ body {
 }
 
 main {
-  max-width: 640px;
-  margin: 5rem auto;
-  padding: 0 1rem;
-  line-height: 1.75;
+  max-width: 1400px;
+  margin: 3rem auto;
+  padding: 0 2rem;
+
+  display: grid;
+  grid-template-columns: 1fr minmax(600px, 680px) 1fr;
+  gap: 3rem;
+}
+
+#left-rail,
+#right-rail {
+  font-size: 0.85rem;
+  color: #777;
+}
+
+#left-rail {
+  padding-top: 2rem;
+}
+
+#right-rail {
+  padding-top: 4rem;
 }
 
 h1 {
@@ -107,3 +124,75 @@ h3 {
   margin-top: 3rem;
 }
 
+#content {
+  justify-self: center;
+  width: 100%;
+}
+
+#history {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+#history span {
+  cursor: pointer;
+}
+
+#history span:hover {
+  text-decoration: underline;
+  color: #000;
+}
+
+#paths {
+  margin-top: 5rem;
+}
+
+
+@media (max-width: 900px) {
+  main {
+    grid-template-columns: 1fr;
+  }
+
+  #left-rail,
+  #right-rail {
+    display: none;
+  }
+}
+
+body.landing {
+  background: #fbfbf8;
+  color: #1f1f1f;
+  font-family: Georgia, "Times New Roman", serif;
+}
+
+body.landing main {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+body.landing h1 {
+  font-size: 2.2rem;
+  font-weight: normal;
+  margin-bottom: 2rem;
+}
+
+body.landing input {
+  font-family: inherit;
+  font-size: 1.1rem;
+  padding: 0.6rem 0.8rem;
+  width: 320px;
+
+  border: none;
+  border-bottom: 1px solid #999;
+  background: transparent;
+  outline: none;
+  text-align: center;
+}
+
+body.landing input::placeholder {
+  color: #aaa;
+}

@@ -7,16 +7,26 @@
 </head>
 <body>
   <main>
-    <nav id="history"></nav>
-    <h1 id="title">deepdive</h1>
-    <p id="summary">Loading…</p>
-    <button id="toggle-full">Read full article</button>
-    <article id="full-article" hidden></article>
+    <aside id="left-rail">
+      <nav id="history"></nav>
+    </aside>
 
-    <section id="paths">
-      <h2>Where to go next</h2>
-      <div id="path-list"></div>
+    <section id="content">
+      <h1 id="title"></h1>
+      <p id="summary"></p>
+
+      <button id="toggle-full">Read full article</button>
+      <section id="full-article" hidden></section>
+
+      <section id="paths">
+        <h2>Where to go next</h2>
+        <div id="path-list"></div>
+      </section>
     </section>
+
+    <aside id="right-rail">
+      <!-- future: depth, modes, metadata -->
+    </aside>
   </main>
 
   <script src="app.js"></script>

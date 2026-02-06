@@ -95,7 +95,7 @@ function renderHistory() {
     nav.appendChild(span);
 
     if (index < historyTrail.length - 1) {
-      nav.append(" → ");
+      nav.append(" ↓ ");
     }
   });
 }
@@ -155,4 +155,6 @@ toggleBtn.onclick = async () => {
   }
 };
 
-loadArticle("Battle_of_Stalingrad");
+const params = new URLSearchParams(window.location.search);
+const article = params.get("article") || "Battle_of_Stalingrad";
+loadArticle(article);
