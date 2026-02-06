@@ -196,3 +196,22 @@ body.landing input {
 body.landing input::placeholder {
   color: #aaa;
 }
+
+body.landing ul {
+  list-style: none;
+  padding: 0;
+  margin-top: 1.5rem;
+  width: 320px;
+  text-align: center;
+}
+
+body.landing li {
+  font-size: 0.95rem;
+  color: #666;
+  padding: 0.35rem 0;
+  cursor: pointer;
+}
+
+body.landing li:hover {
+  color: #000;
+}
