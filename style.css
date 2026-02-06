@@ -1,19 +1,46 @@
 body {
-  font-family: Georgia, serif;
-  background: #fdfdfb;
-  color: #222;
+  font-family: "Georgia", "Times New Roman", serif;
+  background: #fbfbf8;
+  color: #1f1f1f;
 }
 
 main {
-  max-width: 720px;
-  margin: 4rem auto;
-  line-height: 1.6;
+  max-width: 640px;
+  margin: 5rem auto;
+  padding: 0 1rem;
+  line-height: 1.75;
+}
+
+h1 {
+  font-size: 1.9rem;
+  font-weight: normal;
+  margin-bottom: 1.5rem;
+}
+
+h2 {
+  font-size: 1.1rem;
+  font-weight: normal;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #777;
+  margin: 4rem 0 1.5rem;
+}
+
+h3 {
+  font-size: 1rem;
+  font-weight: normal;
+  margin-bottom: 0.25rem;
+}
+
+#summary {
+  font-size: 1.05rem;
+  margin-bottom: 3.5rem;
 }
 
 #history {
-  font-size: 0.9rem;
-  color: #666;
-  margin-bottom: 2rem;
+  font-size: 0.85rem;
+  color: #888;
+  margin-bottom: 3rem;
 }
 
 #history span {
@@ -30,12 +57,53 @@ main {
 }
 
 .path {
-  padding: 1rem;
-  margin-bottom: 1rem;
-  border-left: 3px solid #ccc;
+  margin-bottom: 2rem;
+  padding-left: 1rem;
+  border-left: 1px solid #ddd;
   cursor: pointer;
+}
+
+.path p {
+  font-size: 0.95rem;
+  color: #555;
+  margin-top: 0.3rem;
 }
 
 .path:hover {
   border-left-color: #000;
 }
+
+#toggle-full {
+  background: none;
+  border: none;
+  font-family: inherit;
+  font-size: 0.9rem;
+  color: #555;
+  cursor: pointer;
+  margin-bottom: 3rem;
+}
+
+#toggle-full:hover {
+  color: #000;
+  text-decoration: underline;
+}
+
+#full-article {
+  all: initial;
+  display: block;
+  margin-top: 4rem;
+  font-family: Georgia, "Times New Roman", serif;
+  color: #1f1f1f;
+}
+
+#full-article p {
+  line-height: 1.75;
+  margin: 1.5rem 0;
+}
+
+#full-article h2,
+#full-article h3 {
+  font-weight: normal;
+  margin-top: 3rem;
+}
+

@@ -1,6 +1,15 @@
 let historyTrail = [];
+let fullLoaded = false;
 
 async function loadArticle(title, fromHistory = false) {
+  // Reset full article state on navigation
+  document.getElementById("full-article").setAttribute("hidden", "");
+  document.getElementById("full-article").innerHTML = "";
+  document.getElementById("toggle-full").textContent = "Read full article";
+  document.getElementById("paths").style.display = "block";
+  document.getElementById("paths").style.opacity = "1";
+  fullLoaded = false;
+
   if (!fromHistory) {
     historyTrail.push(title);
   }
@@ -91,4 +100,59 @@ function renderHistory() {
   });
 }
 
-loadArticle("Battle_of_Stalingrad");    
+async function loadFullArticle(title) {
+  const url = `https://en.wikipedia.org/api/rest_v1/page/html/${encodeURIComponent(title)}`;
+  const res = await fetch(url);
+  const html = await res.text();
+
+  const container = document.getElementById("full-article");
+  container.innerHTML = html;
+
+  postProcessArticle(container);
+}
+
+function postProcessArticle(container) {
+  // Remove edit links, metadata, junk
+  container.querySelectorAll(
+    ".mw-editsection, .mw-editsection-like, .reference, sup"
+  ).forEach(el => el.remove());
+
+  // Fix image sizes
+  container.querySelectorAll("img").forEach(img => {
+    img.style.maxWidth = "100%";
+    img.style.height = "auto";
+    img.style.margin = "2rem 0";
+  });
+
+  // Normalize typography
+  container.querySelectorAll("p").forEach(p => {
+    p.style.lineHeight = "1.75";
+    p.style.margin = "1.5rem 0";
+  });
+}
+
+const toggleBtn = document.getElementById("toggle-full");
+const fullArticle = document.getElementById("full-article");
+
+toggleBtn.onclick = async () => {
+  if (!fullLoaded) {
+    await loadFullArticle(
+      document.getElementById("title").textContent.replace(/ /g, "_")
+    );
+    fullLoaded = true;
+  }
+
+  const isHidden = fullArticle.hasAttribute("hidden");
+
+  if (isHidden) {
+    fullArticle.removeAttribute("hidden");
+    document.getElementById("paths").style.opacity = "0.35";
+    toggleBtn.textContent = "Hide full article";
+  } else {
+    fullArticle.setAttribute("hidden", "");
+    document.getElementById("paths").style.opacity = "1";
+    toggleBtn.textContent = "Read full article";
+  }
+};
+
+loadArticle("Battle_of_Stalingrad");
