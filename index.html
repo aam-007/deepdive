@@ -5,30 +5,117 @@
   <title>deepdive</title>
   <link rel="stylesheet" href="style.css" />
 </head>
-<body>
+<body class="landing">
   <main>
-    <aside id="left-rail">
-      <nav id="history"></nav>
-    </aside>
+    <h1>deepdive</h1>
+    <input
+      id="search"
+      type="text"
+      placeholder="Search Wikipedia"
+      autofocus
+    />
+    <ul id="suggestions"></ul>
 
-    <section id="content">
-      <h1 id="title"></h1>
-      <p id="summary"></p>
-
-      <button id="toggle-full">Read full article</button>
-      <section id="full-article" hidden></section>
-
-      <section id="paths">
-        <h2>Where to go next</h2>
-        <div id="path-list"></div>
-      </section>
-    </section>
-
-    <aside id="right-rail">
-      <!-- future: depth, modes, metadata -->
-    </aside>
   </main>
 
-  <script src="app.js"></script>
+  <script>
+  const input = document.getElementById("search");
+  const suggestionsEl = document.getElementById("suggestions");
+
+  let suggestions = [];
+  let selectedIndex = -1;
+
+  async function fetchSuggestions(query) {
+    const url =
+      `https://en.wikipedia.org/w/api.php` +
+      `?action=opensearch` +
+      `&search=${encodeURIComponent(query)}` +
+      `&limit=5` +
+      `&namespace=0` +
+      `&format=json` +
+      `&origin=*`;
+
+    const res = await fetch(url);
+    const data = await res.json();
+    return data[1] || []; // list of titles, fallback to empty array
+  }
+
+  function renderSuggestions() {
+    suggestionsEl.innerHTML = "";
+    
+    suggestions.forEach((title, i) => {
+      const li = document.createElement("li");
+      li.textContent = title;
+      li.style.color = i === selectedIndex ? "#000" : "#666";
+      li.style.cursor = "pointer";
+      li.style.padding = "0.5rem";
+
+      li.onclick = () => go(title);
+
+      suggestionsEl.appendChild(li);
+    });
+  }
+
+  function go(title) {
+    const query = title.replace(/ /g, "_");
+    window.location.href = `reader.html?article=${encodeURIComponent(query)}`;
+  }
+
+  input.addEventListener("input", async () => {
+    const q = input.value.trim();
+
+    if (q.length < 2) {
+      suggestions = [];
+      selectedIndex = -1;
+      suggestionsEl.innerHTML = "";
+      return;
+    }
+
+    suggestions = await fetchSuggestions(q);
+    selectedIndex = -1; // Reset selection on new suggestions
+    renderSuggestions();
+  });
+
+  input.addEventListener("keydown", (e) => {
+    const items = suggestionsEl.querySelectorAll("li");
+
+    if (e.key === "ArrowDown" && items.length) {
+      e.preventDefault();
+      selectedIndex = (selectedIndex + 1) % items.length;
+      renderSuggestions(); // Re-render to show highlight
+    }
+
+    if (e.key === "ArrowUp" && items.length) {
+      e.preventDefault();
+      selectedIndex = (selectedIndex - 1 + items.length) % items.length;
+      renderSuggestions(); // Re-render to show highlight
+    }
+
+    if (e.key === "Escape") {
+      suggestions = [];
+      selectedIndex = -1;
+      suggestionsEl.innerHTML = "";
+    }
+
+    if (e.key === "Enter") {
+      e.preventDefault();
+
+      if (selectedIndex >= 0 && suggestions[selectedIndex]) {
+        go(suggestions[selectedIndex]);
+      } else if (input.value.trim()) {
+        go(input.value.trim());
+      }
+    }
+  });
+
+  // Clear suggestions when clicking outside
+  document.addEventListener("click", (e) => {
+    if (!e.target.closest("#search-container")) {
+      suggestions = [];
+      selectedIndex = -1;
+      suggestionsEl.innerHTML = "";
+    }
+  });
+</script>
 </body>
 </html>
