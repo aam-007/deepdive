@@ -1,14 +1,14 @@
 let historyTrail = [];
-let fullLoaded = false;
 
 async function loadArticle(title, fromHistory = false) {
-  // Reset full article state on navigation
-  document.getElementById("full-article").setAttribute("hidden", "");
-  document.getElementById("full-article").innerHTML = "";
-  document.getElementById("toggle-full").textContent = "Read full article";
+  const fullArticleContainer = document.getElementById("full-article");
+  
+  // UI Reset: Ensure the article container is visible and show loading state
+  fullArticleContainer.removeAttribute("hidden");
+  fullArticleContainer.innerHTML = "<p>Loading full article...</p>";
+  
   document.getElementById("paths").style.display = "block";
   document.getElementById("paths").style.opacity = "1";
-  fullLoaded = false;
 
   if (!fromHistory) {
     historyTrail.push(title);
@@ -16,15 +16,21 @@ async function loadArticle(title, fromHistory = false) {
 
   renderHistory();
 
-  const url = `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(title)}`;
-  const res = await fetch(url);
+  // 1. Fetch and render summary
+  const summaryUrl = `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(title)}`;
+  const res = await fetch(summaryUrl);
   const data = await res.json();
 
   document.getElementById("title").textContent = data.title;
   document.getElementById("summary").textContent = data.extract;
 
+  // 2. Fetch and render navigation links
   const links = await loadLinks(title);
   renderPaths(links);
+
+  // 3. Automatically load the full article body
+ 
+  await loadFullArticle(data.title.replace(/ /g, "_"));
 }
 
 async function loadLinks(title) {
@@ -49,10 +55,8 @@ async function loadLinks(title) {
 function isUsefulLink(link) {
   const t = link.title;
 
-  // Kill Wikipedia namespaces (meta pages)
+  // Filter out meta-pages and noise
   if (t.includes(":")) return false;
-
-  // Kill obvious noise
   if (t.match(/^\d+$/)) return false;
   if (t.startsWith("List of")) return false;
   if (t.includes("(disambiguation)")) return false;
@@ -70,13 +74,8 @@ function renderPaths(links) {
   useful.forEach(link => {
     const div = document.createElement("div");
     div.className = "path";
-
-    div.innerHTML = `
-      <h3>${link.title}</h3>
-    `;
-
+    div.innerHTML = `<h3>${link.title}</h3>`;
     div.onclick = () => loadArticle(link.title);
-
     container.appendChild(div);
   });
 }
@@ -114,49 +113,27 @@ async function loadFullArticle(title) {
 }
 
 function postProcessArticle(container) {
-  // Remove edit links, metadata, junk
+  // Remove Wikipedia-specific UI elements that clutter the view
   container.querySelectorAll(
-    ".mw-editsection, .mw-editsection-like, .reference, sup"
+    ".mw-editsection, .mw-editsection-like, .reference, sup, .infobox, .ambox"
   ).forEach(el => el.remove());
 
-  // Fix image sizes
+  // Clean up images
   container.querySelectorAll("img").forEach(img => {
     img.style.maxWidth = "100%";
     img.style.height = "auto";
     img.style.margin = "2rem 0";
+    img.style.display = "block";
   });
 
-  // Normalize typography
+  // Clean up typography
   container.querySelectorAll("p").forEach(p => {
     p.style.lineHeight = "1.75";
     p.style.margin = "1.5rem 0";
   });
 }
 
-const toggleBtn = document.getElementById("toggle-full");
-const fullArticle = document.getElementById("full-article");
-
-toggleBtn.onclick = async () => {
-  if (!fullLoaded) {
-    await loadFullArticle(
-      document.getElementById("title").textContent.replace(/ /g, "_")
-    );
-    fullLoaded = true;
-  }
-
-  const isHidden = fullArticle.hasAttribute("hidden");
-
-  if (isHidden) {
-    fullArticle.removeAttribute("hidden");
-    document.getElementById("paths").style.opacity = "0.35";
-    toggleBtn.textContent = "Hide full article";
-  } else {
-    fullArticle.setAttribute("hidden", "");
-    document.getElementById("paths").style.opacity = "1";
-    toggleBtn.textContent = "Read full article";
-  }
-};
-
+// Global initialization
 const params = new URLSearchParams(window.location.search);
-const article = params.get("article") || "Battle_of_Stalingrad";
-loadArticle(article);
+const initialArticle = params.get("article") || "Battle_of_Stalingrad";
+loadArticle(initialArticle);

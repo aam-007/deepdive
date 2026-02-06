@@ -24,8 +24,37 @@ main {
   padding-top: 2rem;
 }
 
+/* History Column Styling */
+#history {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  font-size: 0.85rem;
+  color: #888;
+}
+
+#history span {
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+#history span:hover {
+  text-decoration: underline;
+  color: #000;
+}
+
 #right-rail {
   padding-top: 4rem;
+  position: sticky;
+  top: 0;
+  align-self: start; 
+  height: calc(100vh - 4rem);
+  overflow-y: auto;
+}
+
+#content {
+  justify-self: center;
+  width: 100%;
 }
 
 h1 {
@@ -52,25 +81,12 @@ h3 {
 #summary {
   font-size: 1.05rem;
   margin-bottom: 3.5rem;
+  line-height: 1.6;
 }
 
-#history {
-  font-size: 0.85rem;
-  color: #888;
-  margin-bottom: 3rem;
-}
-
-#history span {
-  cursor: pointer;
-}
-
-#history span:hover {
-  text-decoration: underline;
-  color: #000;
-}
-
+/* Paths / Next Steps */
 #paths {
-  margin-top: 3rem;
+  margin-top: 5rem;
 }
 
 .path {
@@ -78,6 +94,11 @@ h3 {
   padding-left: 1rem;
   border-left: 1px solid #ddd;
   cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.path h3 {
+  color: #1f1f1f;
 }
 
 .path p {
@@ -90,68 +111,53 @@ h3 {
   border-left-color: #000;
 }
 
-#toggle-full {
-  background: none;
-  border: none;
-  font-family: inherit;
-  font-size: 0.9rem;
-  color: #555;
-  cursor: pointer;
-  margin-bottom: 3rem;
-}
-
-#toggle-full:hover {
-  color: #000;
-  text-decoration: underline;
-}
-
+/* Full Article Content - Always Visible */
 #full-article {
-  all: initial;
   display: block;
   margin-top: 4rem;
-  font-family: Georgia, "Times New Roman", serif;
+  border-top: 1px solid #eee;
+  padding-top: 3rem;
+  /* Resetting Wikipedia's internal styles while maintaining your font */
+  font-family: "Georgia", "Times New Roman", serif;
   color: #1f1f1f;
+  animation: fadeIn 1s ease;
 }
 
 #full-article p {
   line-height: 1.75;
   margin: 1.5rem 0;
+  font-size: 1.05rem;
 }
 
 #full-article h2,
 #full-article h3 {
   font-weight: normal;
   margin-top: 3rem;
+  color: #1f1f1f;
+  text-transform: none; /* Keep article headings natural */
+  letter-spacing: normal;
 }
 
-#content {
-  justify-self: center;
-  width: 100%;
+#full-article img {
+  filter: grayscale(20%);
+  transition: filter 0.3s;
 }
 
-#history {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
+#full-article img:hover {
+  filter: grayscale(0%);
 }
 
-#history span {
-  cursor: pointer;
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
-#history span:hover {
-  text-decoration: underline;
-  color: #000;
-}
-
-#paths {
-  margin-top: 5rem;
-}
-
-
+/* Responsiveness */
 @media (max-width: 900px) {
   main {
     grid-template-columns: 1fr;
+    margin: 1rem auto;
   }
 
   #left-rail,
@@ -160,12 +166,7 @@ h3 {
   }
 }
 
-body.landing {
-  background: #fbfbf8;
-  color: #1f1f1f;
-  font-family: Georgia, "Times New Roman", serif;
-}
-
+/* Landing Page State */
 body.landing main {
   height: 100vh;
   display: flex;
@@ -176,7 +177,6 @@ body.landing main {
 
 body.landing h1 {
   font-size: 2.2rem;
-  font-weight: normal;
   margin-bottom: 2rem;
 }
 
@@ -185,7 +185,6 @@ body.landing input {
   font-size: 1.1rem;
   padding: 0.6rem 0.8rem;
   width: 320px;
-
   border: none;
   border-bottom: 1px solid #999;
   background: transparent;
@@ -212,6 +211,3 @@ body.landing li {
   cursor: pointer;
 }
 
-body.landing li:hover {
-  color: #000;
-}
