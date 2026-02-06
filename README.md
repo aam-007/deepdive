@@ -1,0 +1,50 @@
+# deepdive
+
+A minimalist, algorithmic wrapper around Wikipedia designed for slow, intentional exploration.
+
+**Live:** https://aam-007.github.io/deepdive/
+
+## What it is
+
+Deepdive turns casual searches into structured intellectual deep-dives. It's a wide-screen, distraction-free interface for reading Wikipedia—a tool for following ideas, not feeds. An experiment in silence, typography, and curiosity.
+
+You search for a topic. You read. You follow connections deeper.
+
+No accounts. No algorithms chasing engagement. No noise.
+
+## Features
+
+- Minimal landing page with instant search
+- Live Wikipedia search suggestions
+- Full article loading, including images
+- Wide-screen, reader-first layout
+- Designed to encourage depth over breadth
+
+## Philosophy
+
+Most interfaces optimize for speed, skimming, and novelty. Deepdive optimizes for:
+
+- Focus
+- Continuity of thought
+- Intellectual patience
+
+This is closer to a library desk than a social app.
+
+## Tech Stack
+
+- HTML
+- CSS
+- Vanilla JavaScript
+- Wikipedia APIs
+
+No frameworks. No build tools. No dependencies.
+
+## Usage
+
+Navigate to the site, search for a topic, and begin reading. Follow links to explore connected ideas at your own pace.
+
+
+
+## License
+
+This project is open source. Please check the repository for license details.
