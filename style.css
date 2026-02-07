@@ -1,6 +1,6 @@
 body {
   font-family: "Georgia", "Times New Roman", serif;
-  background: #fbfbf8;
+  background: #FAF3E0; /* camel white */
   color: #1f1f1f;
 }
 
@@ -47,7 +47,7 @@ main {
   padding-top: 4rem;
   position: sticky;
   top: 0;
-  align-self: start; 
+  align-self: start;
   height: calc(100vh - 4rem);
   overflow-y: auto;
 }
@@ -117,7 +117,6 @@ h3 {
   margin-top: 4rem;
   border-top: 1px solid #eee;
   padding-top: 3rem;
-  /* Resetting Wikipedia's internal styles while maintaining your font */
   font-family: "Georgia", "Times New Roman", serif;
   color: #1f1f1f;
   animation: fadeIn 1s ease;
@@ -134,7 +133,7 @@ h3 {
   font-weight: normal;
   margin-top: 3rem;
   color: #1f1f1f;
-  text-transform: none; /* Keep article headings natural */
+  text-transform: none;
   letter-spacing: normal;
 }
 
