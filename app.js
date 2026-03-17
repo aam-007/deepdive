@@ -1,181 +1,185 @@
-let historyTrail = [];
+// ── Cache & State ──────────────────────────────────────────────
+const cache = new Map();
+let trail = [];
 
-async function loadArticle(title, fromHistory = false) {
-  const fullArticleContainer = document.getElementById("full-article");
-  const rightRailLinks = document.getElementById("path-list");
-  const titleDisplay = document.getElementById("title");
-  const summaryDisplay = document.getElementById("summary");
-  
-  const cleanTitle = title.replace(/_/g, " ");
+// ── API Helpers ────────────────────────────────────────────────
+const enc = s => encodeURIComponent(s);
+const W_REST    = t => `https://en.wikipedia.org/api/rest_v1/page/summary/${enc(t)}`;
+const W_RELATED = t => `https://en.wikipedia.org/api/rest_v1/page/related/${enc(t)}`;
+const W_PARSE   = t => `https://en.wikipedia.org/w/api.php?action=parse&page=${enc(t)}&prop=text&format=json&origin=*&disableeditsection=1`;
+const W_SEARCH  = q => `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${enc(q)}&format=json&origin=*&srlimit=6&srinfo=&srprop=snippet`;
 
-  // 1. Reset UI State
-  fullArticleContainer.removeAttribute("hidden");
-  fullArticleContainer.innerHTML = "<p class='loading'>Fetching content...</p>";
-  rightRailLinks.innerHTML = "<p>Finding paths...</p>";
-  
+function fetchJSON(url) {
+  if (cache.has(url)) return Promise.resolve(cache.get(url));
+  return fetch(url)
+    .then(r => r.ok ? r.json() : Promise.reject(r.status))
+    .then(d => { cache.set(url, d); return d; });
+}
+
+// ── Load Article ───────────────────────────────────────────────
+async function loadArticle(rawTitle, fromHistory = false) {
+  const title = rawTitle.replace(/_/g, ' ');
+
   if (!fromHistory) {
-    if (historyTrail[historyTrail.length - 1] !== cleanTitle) {
-      historyTrail.push(cleanTitle);
+    if (trail[trail.length - 1] !== title) trail.push(title);
+  }
+  renderTrail();
+
+  const bodyEl  = document.getElementById('article-body') || document.getElementById('full-article');
+  const titleEl = document.getElementById('title');
+  const sumEl   = document.getElementById('summary');
+  const pathsEl = document.getElementById('path-list');
+
+  titleEl.textContent = title;
+  sumEl.textContent   = '';
+  bodyEl.innerHTML    = shimmerLines(6);
+  pathsEl.innerHTML   = [1,2,3,4].map(() => `<div class="path-shimmer"></div>`).join('');
+
+  // All three requests fire in parallel
+  const [summaryRes, contentRes, relatedRes] = await Promise.allSettled([
+    fetchJSON(W_REST(rawTitle)),
+    fetchJSON(W_PARSE(rawTitle)),
+    fetchJSON(W_RELATED(rawTitle)),
+  ]);
+
+  // 1. Summary
+  if (summaryRes.status === 'fulfilled') {
+    const d = summaryRes.value;
+    titleEl.textContent = d.title || title;
+    sumEl.textContent   = d.extract || '';
+  }
+
+  // 2. Body
+  if (contentRes.status === 'fulfilled') {
+    const d = contentRes.value;
+    if (d?.parse?.text?.['*']) {
+      bodyEl.innerHTML = d.parse.text['*'];
+      bodyEl.classList.remove('article-enter');
+      void bodyEl.offsetWidth; // force reflow for animation restart
+      bodyEl.classList.add('article-enter');
+      requestAnimationFrame(() => postProcess(bodyEl));
+    } else {
+      bodyEl.innerHTML = `<p>Article content unavailable.</p>`;
     }
+  } else {
+    bodyEl.innerHTML = `<p>Could not load article.</p>`;
   }
-  renderHistory();
 
-  // 2. Prepare Parallel Requests
-  const summaryUrl = `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(title)}`;
-  const relatedUrl = `https://en.wikipedia.org/api/rest_v1/page/related/${encodeURIComponent(title)}`;
-  const contentUrl = `https://en.wikipedia.org/w/api.php?action=parse&page=${encodeURIComponent(title)}&prop=text&format=json&origin=*`;
-
-  const summaryPromise = fetch(summaryUrl).then(res => res.json());
-  const relatedPromise = fetch(relatedUrl).then(res => res.ok ? res.json() : { pages: [] });
-  const contentPromise = fetch(contentUrl).then(res => res.json());
-
-  try {
-    // 3. Render Summary
-    summaryPromise.then(data => {
-      titleDisplay.textContent = data.title || cleanTitle;
-      summaryDisplay.textContent = data.extract || "";
-    });
-
-    // 4. Render Body Content
-    contentPromise.then(data => {
-      if (data.parse && data.parse.text) {
-        fullArticleContainer.innerHTML = data.parse.text["*"];
-        // Wait for DOM to update then clean up and hook links
-        requestAnimationFrame(() => postProcessArticle(fullArticleContainer));
-      } else {
-        throw new Error("Content not found");
-      }
-    }).catch(err => {
-      fullArticleContainer.innerHTML = "<p>Error loading article body.</p>";
-    });
-
-    // 5. Sidebar Paths
-    relatedPromise
-      .then(async (data) => {
-        let pages = data.pages ? data.pages.slice(0, 5) : [];
-        if (pages.length === 0) {
-          pages = await fetchSearchFallback(cleanTitle);
-        }
-        renderPaths(pages);
-      })
-      .catch(async () => {
-        const fallbackPages = await fetchSearchFallback(cleanTitle);
-        renderPaths(fallbackPages);
-      });
-
-  } catch (error) {
-    console.error("Critical Load Error:", error);
-    fullArticleContainer.innerHTML = "<p>Something went wrong.</p>";
+  // 3. Related / sidebar paths
+  let pages = [];
+  if (relatedRes.status === 'fulfilled' && relatedRes.value?.pages?.length) {
+    pages = relatedRes.value.pages.slice(0, 5);
+  } else {
+    pages = await searchFallback(title);
   }
+  renderPaths(pages);
 }
 
-async function fetchSearchFallback(query) {
-  const url = `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(query)}&format=json&origin=*&srlimit=6`;
-  try {
-    const res = await fetch(url);
-    const data = await res.json();
-    if (!data.query || !data.query.search) return [];
-    return data.query.search
-      .filter(item => item.title.toLowerCase() !== query.toLowerCase())
-      .map(item => ({
-        title: item.title,
-        displaytitle: item.title,
-        description: item.snippet.replace(/<\/?[^>]+(>|$)/g, "") + "..."
-      }));
-  } catch (e) { return []; }
+// ── Post-Process Wikipedia HTML ────────────────────────────────
+function postProcess(root) {
+  // Strip Wikipedia clutter
+  root.querySelectorAll([
+    '.mw-editsection', '.reflist', 'sup.reference', '.infobox',
+    '.ambox', '.navbox', '.hatnote', '.metadata', '.side-box',
+    '.noprint', '.mw-empty-elt', 'style', '.toc'
+  ].join(',')).forEach(el => el.remove());
+
+  // Fix relative image URLs
+  root.querySelectorAll('img').forEach(img => {
+    const src = img.getAttribute('src') || '';
+    if (!src.startsWith('http'))
+      img.src = src.startsWith('//') ? `https:${src}` : `https://en.wikipedia.org${src}`;
+    img.loading = 'lazy';
+  });
+
+  // Intercept all links
+  root.querySelectorAll('a[href]').forEach(a => {
+    const href = a.getAttribute('href');
+    if (href.startsWith('/wiki/') && !href.includes(':')) {
+      a.onclick = e => {
+        e.preventDefault();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        loadArticle(decodeURIComponent(href.slice(6)));
+      };
+    } else if (href.startsWith('#')) {
+      a.onclick = e => {
+        e.preventDefault();
+        document.getElementById(href.slice(1))?.scrollIntoView({ behavior: 'smooth' });
+      };
+    } else {
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+    }
+  });
 }
 
+// ── Render Sidebar Paths ───────────────────────────────────────
 function renderPaths(pages) {
-  const container = document.getElementById("path-list");
-  container.innerHTML = "";
-  if (!pages || pages.length === 0) {
-    container.innerHTML = "<p>No paths found.</p>";
+  const el = document.getElementById('path-list');
+  if (!pages.length) {
+    el.innerHTML = `<p>No paths found.</p>`;
     return;
   }
+  el.innerHTML = '';
   pages.forEach(page => {
-    const div = document.createElement("div");
-    div.className = "path";
-    div.style.cursor = "pointer";
+    const div = document.createElement('div');
+    div.className = 'path';
+    div.style.cursor = 'pointer';
     div.innerHTML = `<h3>${page.displaytitle || page.title}</h3><p>${page.description || 'Continue your dive...'}</p>`;
     div.onclick = () => {
-      window.scrollTo(0, 0);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
       loadArticle(page.title);
     };
-    container.appendChild(div);
+    el.appendChild(div);
   });
 }
 
-
-function postProcessArticle(container) {
-  // 1. Remove unwanted Wikipedia elements
-  const unwanted = [
-    ".mw-editsection", ".reflist", ".reference", "sup", ".infobox", 
-    ".ambox", ".navbox", ".hatnote", ".metadata", ".side-box", ".noprint"
-  ];
-  container.querySelectorAll(unwanted.join(",")).forEach(el => el.remove());
-
-  // 2. Fix Images (convert to absolute URLs)
-  container.querySelectorAll("img").forEach(img => {
-    img.setAttribute("loading", "lazy");
-    img.style.maxWidth = "100%";
-    img.style.height = "auto";
-    img.style.display = "block";
-    img.style.margin = "2rem auto";
-
-    const src = img.getAttribute("src");
-    if (src && !src.startsWith("http")) {
-      img.src = src.startsWith("//") ? `https:${src}` : `https://en.wikipedia.org${src}`;
-    }
-  });
-
-  // 3. FIX: Link Interceptor
-  container.querySelectorAll("a").forEach(link => {
-    const href = link.getAttribute("href");
-
-    // Check if it's a standard Wikipedia article link
-    if (href && href.startsWith("/wiki/") && !href.includes(":")) {
-      link.onclick = (e) => {
-        e.preventDefault(); // Stop the 404 navigation
-        const wikiTitle = href.replace("/wiki/", "");
-        window.scrollTo(0, 0);
-        loadArticle(decodeURIComponent(wikiTitle));
-      };
-    } 
-    // Handle anchor links (links to sections on the same page)
-    else if (href && href.startsWith("#")) {
-      link.onclick = (e) => {
-        e.preventDefault();
-        const targetId = href.substring(1);
-        const targetEl = document.getElementById(targetId);
-        if (targetEl) targetEl.scrollIntoView({ behavior: "smooth" });
-      };
-    } 
-    // Handle external links (open in new tab)
-    else if (href && (href.startsWith("http") || href.startsWith("//"))) {
-      link.setAttribute("target", "_blank");
-      link.setAttribute("rel", "noopener noreferrer");
-    }
-  });
-}
-
-function renderHistory() {
-  const nav = document.getElementById("history");
+// ── Trail (breadcrumb) ─────────────────────────────────────────
+function renderTrail() {
+  const nav = document.getElementById('history');
   if (!nav) return;
-  nav.innerHTML = "";
-  historyTrail.forEach((title, index) => {
-    const span = document.createElement("span");
-    span.textContent = title;
-    span.className = "history-item";
-    span.style.cursor = "pointer";
+  nav.innerHTML = '';
+  trail.forEach((t, i) => {
+    const span = document.createElement('span');
+    span.textContent = t;
+    span.className = 'history-item';
+    span.style.cursor = i === trail.length - 1 ? 'default' : 'pointer';
     span.onclick = () => {
-      historyTrail = historyTrail.slice(0, index + 1);
-      loadArticle(title, true);
+      if (i === trail.length - 1) return;
+      trail = trail.slice(0, i + 1);
+      loadArticle(t, true);
     };
     nav.appendChild(span);
-    if (index < historyTrail.length - 1) nav.append(" ↓ ");
+    if (i < trail.length - 1) nav.append(' ↓ ');
   });
+  nav.scrollLeft = nav.scrollWidth;
 }
 
-// Initial Load
+// ── Search ─────────────────────────────────────────────────────
+async function searchFallback(query) {
+  try {
+    const data = await fetchJSON(W_SEARCH(query));
+    return (data?.query?.search || [])
+      .filter(r => r.title.toLowerCase() !== query.toLowerCase())
+      .slice(0, 5)
+      .map(r => ({
+        title: r.title,
+        displaytitle: r.title,
+        description: r.snippet.replace(/<[^>]+>/g, '') + '…'
+      }));
+  } catch { return []; }
+}
+
+// ── Utils ──────────────────────────────────────────────────────
+function shimmerLines(n) {
+  const widths = [95, 88, 92, 70, 85, 60];
+  return `<div class="loading-shimmer">
+    ${Array.from({ length: n }, (_, i) =>
+      `<div class="shimmer-line" style="width:${widths[i % widths.length]}%;animation-delay:${i * 80}ms"></div>`
+    ).join('')}
+  </div>`;
+}
+
+// ── Init ───────────────────────────────────────────────────────
 const params = new URLSearchParams(window.location.search);
-loadArticle(params.get("article") || "India");
+loadArticle(params.get('article') || 'India');
