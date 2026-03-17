@@ -219,3 +219,23 @@ body.landing li {
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
 }
+
+.loading-shimmer { display: flex; flex-direction: column; gap: 12px; }
+.shimmer-line {
+  height: 14px;
+  background: linear-gradient(90deg, #e8e3da 25%, #ede9e0 50%, #e8e3da 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite;
+  border-radius: 4px;
+}
+@keyframes shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+.path-shimmer { height: 52px; margin-bottom: 10px; border-radius: 4px; }
+.path-shimmer, .shimmer-line { /* same gradient as above */ }
+.article-enter { animation: fadeUp 240ms ease forwards; }
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
